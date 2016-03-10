@@ -9,7 +9,7 @@ var program = require('commander');
     colors = require('colors'),
     util  = require('util'),
     spawn = require('child_process').spawn,
-    spawnSync = require('child_process').spawn,
+    spawnSync = require('child_process').spawnSync,
     spawnargs = require('spawn-args'),
     dockercompose = syncExec('which docker-compose').stdout.replace(/(\r\n|\n|\r)/gm,""),
     YAML = require('yamljs'),
@@ -44,30 +44,38 @@ program
   .option("-c --cwd <cwd>", "Set the working directory inside the container.")
   .action(function(cmd, options){
 
-    cmd = spawnargs(cmd);
+  cmd = spawnargs(cmd);
 
-    var cmd_command = cmd[0];
-    var cmd_args = cmd;
-    cmd_args.shift();
+  var cmd_command = cmd[0];
+  var cmd_args = cmd;
+  cmd_args.shift();
 
-    console.log(cmd_command)
-    console.log(cmd_args)
+  function shell() {  
+    process.stdin.pause();
 
-    console.log('exec "%s %s" using %s mode', cmd_command, cmd_args, options.exec_mode);
+    process.stdin.setRawMode(false);
 
+    var ch = require('child_process').spawn(cmd_command, cmd_args, {
+      stdio: [0, 1, 2]
+    });
 
-    var dp = spawnSync(cmd_command, cmd_args, { shell: true, cwd: options.cwd || "/" })
+    ch.on('exit', function(test) {
+        process.stdin.setRawMode(true);
+    });
 
-    dp.stdin.pipe(process.stdin);
-    dp.stdout.pipe(process.stdout);
-    dp.stderr.pipe(process.stderr);
+    ch.on('err', function() {
+      console.log("Error!".red)
+    });
+
+  }
+  shell();
 
 
   }).on('--help', function() {
     console.log('  Examples:');
     console.log();
-    console.log('    $ ship gulp -e sequential');
-    console.log('    $ ship gulp -e async');
+    console.log('    $ ship exec "docker-compose up"');
+    console.log('    $ ship exec -e async');
     console.log();
   });
 
