@@ -1,8 +1,9 @@
 {
   "name": "ship",
   "version": "1.0.0",
-  "description": "",
+  "description": "WP docker ship",
   "main": "ship",
+  "repository": "ssh://git@git.schmidigital.de:7999/schmid/ship.git",
   "dependencies": {
     "colors": "^1.1.2",
     "commander": "^2.9.0",
@@ -13,6 +14,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Michael Smith",
   "license": "ISC"
 }

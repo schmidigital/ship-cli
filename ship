@@ -37,7 +37,7 @@ program
   });
 
 program
-  .command('exec <cmd> <a')
+  .command('exec <cmd> <a>')
   .alias('ex')
   .description('execute the given remote cmd inside container')
   .option("-e, --exec_mode <mode>", "Which exec mode to use")
