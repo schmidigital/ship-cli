@@ -1,4 +1,4 @@
 web:
   environment:
-    URL: 'ship.docker'
+    URL: 'vaas.docker'
     DEFAULT_BRANCH: 'dev'

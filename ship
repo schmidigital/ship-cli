@@ -13,10 +13,11 @@ var program = require('commander');
     spawnargs = require('spawn-args'),
     dockercompose = syncExec('which docker-compose').stdout.replace(/(\r\n|\n|\r)/gm,""),
     YAML = require('yamljs'),
-    fs = require('fs')
-    //require('shelljs/global');
+    fs = require('fs'),
+    _ = require('lodash'),
+    require('shelljs/global')
 
-
+var config = require( __dirname + "/config/config.json")
 
 program
   .version('0.0.1')
@@ -78,18 +79,27 @@ program
   .option("-m --migrate <migrate>", "Wheter to migrate database or not.")
   .action(function(env, options){
 
-    check_reverse_proxy();
 
-    generate_compose(env);
+    var settings = generate_compose(env);
+
+    check_reverse_proxy();
 
     generate_nginx(env);
 
-    // To Do
-    // - docker-compose.yml generieren, je nachdem was für ein Profil ich hab. z.B. Wordpress. Wow, De-Ja-Vu Extreme.
-    // - wordpress seite generieren / clonen. Check ob site schon geklont ist. Für alle Branches Ordner anlegen? Am besten konfigurierbar machen.
-    
+
+    // Default Branches to clone
+    var branches = ["master", "dev", "test"];
+
+    clone_branches(branches, settings)
+
+    setup_branches(branches, settings)
+
+    // Import database. aufpassa, das is anders bei anderen profilen!
+    db_import()
+
     console.log("Starting Containers");
-    /*var dp = spawn(dockercompose, ["up"])
+
+    var dp = spawn(dockercompose, ["up"])
 
     dp.stdout.on('data', function (data) {
       console.log(data.toString());
@@ -101,7 +111,7 @@ program
 
     dp.on('exit', function (code) {
       console.log('child process exited with code ' + code);
-    });*/
+    });
 
   }).on('--help', function() {
     console.log('  Examples:');
@@ -153,19 +163,31 @@ function check_reverse_proxy () {
 
 
 function generate_compose (env) {
-    // Set environment
+
+    // 1. Load Settings
+    var settings = YAML.load( __dirname + '/config/settings.yml');
+
+    // 2. Load Template
+    var template = YAML.load( __dirname + '/config/templates/' + config.profile + '.yml');
+
+    // 3. Load Environment
     var env = YAML.load( __dirname + '/config/env/' + env+ '.yml');
 
-    env.web.environment.VIRTUAL_HOST = "*." + env.web.environment.URL + "," + env.web.environment.URL;
+
+    var compose = _.merge(template, settings, env)
+
+    compose.web.environment.VIRTUAL_HOST = "*." + env.web.environment.URL + "," + env.web.environment.URL;
 
     // Generate YAML 
-    env_yml = YAML.stringify(env, 4);
+    env_yml = YAML.stringify(compose, 4);
 
-    fs.writeFile(__dirname + "/docker-compose.override.yml", env_yml, function(err) {
+    fs.writeFile(__dirname + "/docker-compose.yml", env_yml, function(err) {
         if(err) throw err; 
 
         console.log("Yaml file was saved!");
     }); 
+
+    return compose;
 }
 
 function generate_nginx (env) {
@@ -185,4 +207,65 @@ function generate_nginx (env) {
     });
 
     });
+}
+
+// TODO: Was machen wir, wenns die Branches noch nicht gibt? Anlegen?
+//       Fehlermeldung ausgeben und fragen, ob man erstellen soll?
+function clone_branches (branches, settings) {
+    for (var key in branches) {
+        var branch = branches[key]
+
+        if (branch != "master") 
+          folder = branch;
+        else
+          folder = "www";
+
+        if(!fs.existsSync(__dirname + "/www/" + folder)) {
+          console.log("Cloning into " + "www/" + branch)
+          var exec = syncExec("git clone -b " + branch + " " + settings.web.environment.SITE_REPO + " " +
+                            __dirname + "/www/" + folder)
+          console.log(exec)
+        } 
+        else {
+          console.log(__dirname + "/www/" + folder + " already exists!")
+        }
+    }
+}
+
+function setup_branches (branches, settings) {
+    for (var key in branches) {
+        var branch = branches[key]
+
+        if (branch != "master") 
+          folder = branch;
+        else
+          folder = "www";
+
+        if(fs.existsSync(__dirname + "/www/" + folder)) {
+          cd(__dirname + "/www/" + branch)
+
+          console.log("bower install")
+          syncExec("bower install");
+
+          console.log("npm install")
+          syncExec("npm install");
+          
+          console.log("Using gulp magic to create css and js for live")
+          syncExec("gulp dist");
+
+          // Mit Yeoman ausführen! Babam
+          cd(__dirname + "/www/" + branch + "/www")
+          console.log("Set proper wordpress settings")
+          syncExec( __dirname + "/tools/wp_config.sh" )
+
+        }
+        else {
+          console.log("Folder " + __dirname + "/www/" + branch + " does not exist".red)
+        }
+        
+    }
+}
+
+function db_import() {
+
 }
