@@ -8,7 +8,10 @@
     "colors": "^1.1.2",
     "commander": "^2.9.0",
     "lodash": "^4.6.1",
-    "shelljs": "^0.6.0"
+    "shelljs": "^0.6.0",
+    "spawn-args": "^0.1.0",
+    "sync-exec": "^0.6.2",
+    "yamljs": "^0.2.6"
   },
   "devDependencies": {},
   "scripts": {
