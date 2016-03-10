@@ -1,0 +1,33 @@
+web:
+  image: schmidigital/docker-nginx-php-wordpress
+  volumes:
+    - "./config/nginx.conf:/data/conf/nginx/hosts.d/nginx.conf"
+    - "./www:/data/www"
+  links:
+    - db
+  environment: 
+    NGINX_GENERATE_DEFAULT_VHOST: "false"
+
+    WORDPRESS_DB_HOST: db:3306
+    WORDPRESS_DB_USER: "wordpress"
+    WORDPRESS_DB_PASSWORD: "wordpress"
+    WORDPRESS_DB_NAME: "wordpress"
+
+    SITE_TITLE: "Site Title"
+    ADMIN_USER: "admin"
+    ADMIN_PW: "admin"
+    ADMIN_EMAIL: "admin@admin.de"
+
+    SITE_REPO: "ssh://git@git.schmidigital.de:7999/some/repo.git"
+
+    USER: www
+    FOLDER: "/data"
+    ENTRYPOINT: /config/bootstrap.sh
+
+db:
+  image: mysql
+  environment:
+    MYSQL_ROOT_PASSWORD: "wordpress"
+    MYSQL_DATABASE: "wordpress"
+    MYSQL_USER: "wordpress"
+    MYSQL_PASSWORD: "wordpress"

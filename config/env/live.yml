@@ -1,0 +1,4 @@
+web:
+  environment:
+    URL: 'vaas-reinigungssysteme.de'
+    DEFAULT_BRANCH: 'master'

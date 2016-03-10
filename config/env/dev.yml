@@ -1,0 +1,4 @@
+web:
+  environment:
+    URL: 'dev.vaas-reinigungssysteme.de'
+    DEFAULT_BRANCH: 'dev'
