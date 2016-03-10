@@ -37,25 +37,25 @@ program
   });
 
 program
-  .command('exec <cmd> <a>')
+  .command('exec <cmd>')
   .alias('ex')
   .description('execute the given remote cmd inside container')
   .option("-e, --exec_mode <mode>", "Which exec mode to use")
   .option("-c --cwd <cwd>", "Set the working directory inside the container.")
   .action(function(cmd, options){
 
-  cmd = spawnargs(cmd);
+  var full_command = spawnargs(cmd);
 
-  var cmd_command = cmd[0];
-  var cmd_args = cmd;
-  cmd_args.shift();
+  var command = full_command[0];
+  var args = full_command;
+  args.shift();
 
-  function shell() {  
+  function shell(command, args) {  
     process.stdin.pause();
 
     process.stdin.setRawMode(false);
 
-    var ch = require('child_process').spawn(cmd_command, cmd_args, {
+    var ch = require('child_process').spawn(command, args, {
       stdio: [0, 1, 2]
     });
 
@@ -66,9 +66,8 @@ program
     ch.on('err', function() {
       console.log("Error!".red)
     });
-
   }
-  shell();
+  shell(command, args);
 
 
   }).on('--help', function() {
