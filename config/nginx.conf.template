@@ -6,7 +6,11 @@ server {
 
   # default branch is www
   if ($branch = '') {
-    set $branch "www";
+    set $branch "master";
+  }
+
+  if ($branch = 'www') {
+    set $branch "master";
   }
 
   root        /data/www/$branch;

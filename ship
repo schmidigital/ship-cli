@@ -11,19 +11,31 @@ var program = require('commander');
     spawn = require('child_process').spawn,
     spawnSync = require('child_process').spawnSync,
     spawnargs = require('spawn-args'),
-    dockercompose = syncExec('which docker-compose').stdout.replace(/(\r\n|\n|\r)/gm,""),
     YAML = require('yamljs'),
     fs = require('fs'),
     _ = require('lodash'),
     require('shelljs/global')
 
+/**
+ * Local Commands
+ * 
+ * TODO: Really check, if command is available!
+ */
+var dockercompose = syncExec('which docker-compose').stdout.replace(/(\r\n|\n|\r)/gm,""),
+    docker = syncExec('which dockers').stdout.replace(/(\r\n|\n|\r)/gm,"")
+
+
 var config = require( __dirname + "/config/config.json")
+var ship_config = require( __dirname + "/.ship.json")
+
 
 program
-  .version('0.0.1')
+  .version('0.0.5')
   .option('-C, --chdir <path>', 'change the working directory')
   .option('-c, --config <path>', 'set config path. defaults to ./deploy.conf')
   .option('-T, --no-tests', 'ignore test hook')
+
+
 
 program
   .command('setup [env]')
@@ -36,6 +48,8 @@ program
     //console.log('setup for %s env with %s mode', env, mode);
   });
 
+
+
 program
   .command('exec <cmd>')
   .alias('ex')
@@ -44,30 +58,8 @@ program
   .option("-c --cwd <cwd>", "Set the working directory inside the container.")
   .action(function(cmd, options){
 
-  var full_command = spawnargs(cmd);
 
-  var command = full_command[0];
-  var args = full_command;
-  args.shift();
-
-  function shell(command, args) {  
-    process.stdin.pause();
-
-    process.stdin.setRawMode(false);
-
-    var ch = require('child_process').spawn(command, args, {
-      stdio: [0, 1, 2]
-    });
-
-    ch.on('exit', function(test) {
-        process.stdin.setRawMode(true);
-    });
-
-    ch.on('err', function() {
-      console.log("Error!".red)
-    });
-  }
-  shell(command, args);
+    shell(cmd);
 
 
   }).on('--help', function() {
@@ -78,6 +70,8 @@ program
     console.log();
   });
 
+
+
 program
   .command('start <env>')
   .alias('s')
@@ -85,6 +79,8 @@ program
   .option("-b --branch <branch>", "Which branch to use. (e.g. /feature/vs-13-slider")
   .option("-m --migrate <migrate>", "Wheter to migrate database or not.")
   .action(function(env, options){
+
+    set_environment(env);
 
 
     var settings = generate_compose(env);
@@ -106,19 +102,7 @@ program
 
     console.log("Starting Containers");
 
-    var dp = spawn(dockercompose, ["up"])
-
-    dp.stdout.on('data', function (data) {
-      console.log(data.toString());
-    });
-
-    dp.stderr.on('data', function (data) {
-      console.log('stderr: ' + data);
-    });
-
-    dp.on('exit', function (code) {
-      console.log('child process exited with code ' + code);
-    });
+    shell(dockercompose, ["up", "-d"])
 
   }).on('--help', function() {
     console.log('  Examples:');
@@ -128,27 +112,128 @@ program
     console.log();
   });
 
+
+program
+  .command('destroy [container]')
+  .alias('d')
+  .description('destroys all containers or a specific one given in container argument.')
+  .action(function(container){
+
+    shell(dockercompose, ["down"])
+
+  }).on('--help', function() {
+    console.log('  Examples:');
+    console.log();
+    console.log('    $ ship destroy');
+    console.log('    $ ship destroy web');
+    console.log();
+  });
+
+
+
 program
   .command('init <type>')
   .alias('i')
   .description('initialize a project using a profile, e.g. wordpress, magento, nodejs, html, php')
-  program
-  .command('exec <cmd> <a')
-  .alias('ex')
-  .description('execute the given remote cmd inside container')
-  .option("-p, --profile <profile>", "Which exec mode to use. e.G. wordpress, magento, nodejs, ...")
-  .action(function(env){
-    console.log('deploying "%s"', env);
-  });
+
 
 program
-  .command('*')
-  .action(function(env){
-    console.log('deploying "%s"', env);
+  .command('nginx <command>')
+  .description('initialize a project using a profile, e.g. wordpress, magento, nodejs, html, php')
+  .action(function(command){
+
+    switch (command) {
+      case "setup": {
+
+        generate_nginx();
+
+        executeCommand("web", "nginx -s reload")
+      }
+    }
+
+  }).on('--help', function() {
+    console.log('  Examples:');
+    console.log();
+    console.log('    $ ship destroy');
+    console.log('    $ ship destroy web');
+    console.log();
   });
 
 program.parse(process.argv);
 
+
+function executeCommand(type, command) {
+  getContainerNameByType(type, function(container) {
+    console.log(container)
+    shell("docker exec -it " + container + " " + command)
+  })
+}
+
+function getContainerNameByType(type, cb) {
+
+  var docker_compose = spawn("docker-compose", ["ps", "-q"])
+  var xargs = spawn("xargs", ["docker", "inspect", "--format", "'{{.Name}}'"])
+  var grep = spawn("grep", [ type ])
+  var sed = spawn("sed", ["s:/::"])
+
+  docker_compose.stdout.pipe(xargs.stdin);
+  xargs.stdout.pipe(grep.stdin);
+  grep.stdout.pipe(sed.stdin);
+
+  sed.stdout.on('data', function(data){
+      var container = data.toString();
+      container = container.replace(/'/g,"");
+      if(container) {
+          cb(container);
+      }
+      else {
+        throw "Container not found!"
+      }
+  });
+
+}
+
+function set_environment(env) {
+
+  var config = {
+    env: env,
+  }
+
+  var outputFilename = '.ship.json';
+
+  fs.writeFile(outputFilename, JSON.stringify(config, null, 4), function(err) {
+      if(err) {
+        console.log(err);
+      } else {
+        console.log("JSON Config saved to ".green + outputFilename);
+      }
+  }); 
+}
+
+function shell(cmd) {  
+
+  var full_command = spawnargs(cmd);
+
+  var command = full_command[0];
+  var args = full_command;
+  args.shift();
+
+
+  process.stdin.pause();
+  process.stdin.setRawMode(false);
+
+  var ch = require('child_process').spawn(command, args, {
+    stdio: [0, 1, 2]
+  });
+
+  ch.on('exit', function(test) {
+      process.stdin.setRawMode(true);
+  });
+
+  ch.on('err', function() {
+    console.log("Error!".red)
+  });
+}
 
 function check_reverse_proxy () {
   var running = syncExec('docker inspect --format="{{ .State.Running }}" jwilderproxy 2> /dev/null');
@@ -175,10 +260,10 @@ function generate_compose (env) {
     var settings = YAML.load( __dirname + '/config/settings.yml');
 
     // 2. Load Template
-    var template = YAML.load( __dirname + '/config/templates/' + config.profile + '.yml');
+    var template = YAML.load( __dirname + '/config/templates/' + config.profile + '/' + config.profile + '.yml');
 
     // 3. Load Environment
-    var env = YAML.load( __dirname + '/config/env/' + env+ '.yml');
+    var env = YAML.load( __dirname + '/config/env/' + env + '.yml');
 
 
     var compose = _.merge(template, settings, env)
@@ -199,19 +284,23 @@ function generate_compose (env) {
 
 function generate_nginx (env) {
 
-    var env = YAML.load( __dirname + '/config/env/' + env + '.yml');
-
-    // Set environment
+    var env = env || ship_config.env;
+    var env_config = YAML.load( __dirname + '/config/env/' + env + '.yml');
     
+    console.log("Generate Nginx File using " + env + " environment.")
+
+
     fs.readFile( __dirname + '/config/nginx.conf.template', 'utf-8', function (err, data) {
-    if (err) throw err; 
+        if (err) throw err; 
 
-    var result = data.replace(/DOMAIN/g, env.web.environment.URL);
+        var result = data.replace(/DOMAIN/g, env_config.web.environment.URL);
 
-    fs.writeFile( __dirname + '/config/nginx.conf'
-      , result, 'utf8', function (err) {
-       if (err) throw err;
-    });
+        fs.writeFile( __dirname + '/config/nginx.conf'
+          , result, 'utf8', function (err) {
+           if (err) throw err;
+
+           console.log("Successfully created nginx.conf".green)
+        });
 
     });
 }
@@ -219,6 +308,8 @@ function generate_nginx (env) {
 // TODO: Was machen wir, wenns die Branches noch nicht gibt? Anlegen?
 //       Fehlermeldung ausgeben und fragen, ob man erstellen soll?
 function clone_branches (branches, settings) {
+    console.log("# Clone Branches".blue)
+
     for (var key in branches) {
         var branch = branches[key]
 
@@ -240,6 +331,8 @@ function clone_branches (branches, settings) {
 }
 
 function setup_branches (branches, settings) {
+    console.log("# Setup Branches".blue)
+
     for (var key in branches) {
         var branch = branches[key]
 
@@ -262,12 +355,13 @@ function setup_branches (branches, settings) {
 
           // Mit Yeoman ausführen! Babam
           cd(__dirname + "/www/" + branch + "/www")
+
           console.log("Set proper wordpress settings")
-          syncExec( __dirname + "/tools/wp_config.sh" )
+          syncExec( __dirname + "/tools/wp_config.sh")
 
         }
         else {
-          console.log("Folder " + __dirname + "/www/" + branch + " does not exist".red)
+          console.log("Error: ".red + "Folder " + __dirname + "/www/" + branch + " does not exist")
         }
         
     }
