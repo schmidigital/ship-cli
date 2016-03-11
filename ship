@@ -9,7 +9,6 @@ var program = require('commander');
     colors = require('colors'),
     util  = require('util'),
     spawn = require('child_process').spawn,
-    spawnSync = require('child_process').spawnSync,
     spawnargs = require('spawn-args'),
     YAML = require('yamljs'),
     fs = require('fs'),
@@ -26,7 +25,18 @@ var dockercompose = syncExec('which docker-compose').stdout.replace(/(\r\n|\n|\r
 
 
 var config = require( __dirname + "/config/config.json")
-var ship_config = require( __dirname + "/.ship.json")
+var ship_config;
+
+if(fs.existsSync(__dirname + "/.ship.json")) {
+  console.log("Ship config exists. nice.")
+  ship_config = require( __dirname + "/.ship.json")
+} 
+else {
+  console.log("Ship config does not yet exist!")
+}
+
+// Default Branches to clone
+var branches = ["master", "dev", "test"];
 
 
 program
@@ -38,35 +48,32 @@ program
 
 
 program
-  .command('setup [env]')
+  .command('setup')
   .description('run setup commands for the site(s)')
-  //.option("-s, --setup_mode [mode]", "Which setup mode to use.")
-  .action(function(env, options){
-    //var mode = options.setup_mode || "local";
-    env = env || 'local';
-    console.log('setup for %s env', env);
-    //console.log('setup for %s env with %s mode', env, mode);
+  .action(function(){
+
+    var settings = generate_compose(ship_config.env);
+
+    clone_branches(branches, settings)
+    setup_branches(branches, settings)
+
   });
 
 
 
 program
-  .command('exec <cmd>')
+  .command('exec <container> <cmd>')
   .alias('ex')
-  .description('execute the given remote cmd inside container')
+  .description('execute the given remote cmd inside a container')
   .option("-e, --exec_mode <mode>", "Which exec mode to use")
-  .option("-c --cwd <cwd>", "Set the working directory inside the container.")
-  .action(function(cmd, options){
+  .action(function(container, cmd){
 
-
-    shell(cmd);
-
+    execContainerCommand(container, cmd)
 
   }).on('--help', function() {
     console.log('  Examples:');
     console.log();
     console.log('    $ ship exec "docker-compose up"');
-    console.log('    $ ship exec -e async');
     console.log();
   });
 
@@ -82,27 +89,15 @@ program
 
     set_environment(env);
 
-
     var settings = generate_compose(env);
 
-    check_reverse_proxy();
-
+    check_reverse_proxy(env);
     generate_nginx(env);
-
-
-    // Default Branches to clone
-    var branches = ["master", "dev", "test"];
-
     clone_branches(branches, settings)
 
+    shell(dockercompose + " up -d")
+
     setup_branches(branches, settings)
-
-    // Import database. aufpassa, das is anders bei anderen profilen!
-    db_import()
-
-    console.log("Starting Containers");
-
-    shell(dockercompose, ["up", "-d"])
 
   }).on('--help', function() {
     console.log('  Examples:');
@@ -119,7 +114,7 @@ program
   .description('destroys all containers or a specific one given in container argument.')
   .action(function(container){
 
-    shell(dockercompose, ["down"])
+    shell(dockercompose + " down")
 
   }).on('--help', function() {
     console.log('  Examples:');
@@ -129,6 +124,22 @@ program
     console.log();
   });
 
+
+program
+  .command('enter [container]')
+  .alias('e')
+  .description('enter a specific container.')
+  .action(function(container){
+
+    execContainerCommand("web", "bash")
+
+  }).on('--help', function() {
+    console.log('  Examples:');
+    console.log();
+    console.log('    $ ship enter web');
+    console.log('    $ ship enter db');
+    console.log();
+  });
 
 
 program
@@ -141,16 +152,12 @@ program
   .command('nginx <command>')
   .description('initialize a project using a profile, e.g. wordpress, magento, nodejs, html, php')
   .action(function(command){
-
     switch (command) {
       case "setup": {
-
         generate_nginx();
-
-        executeCommand("web", "nginx -s reload")
+        execContainerCommand("web", "nginx -s reload")
       }
     }
-
   }).on('--help', function() {
     console.log('  Examples:');
     console.log();
@@ -161,11 +168,29 @@ program
 
 program.parse(process.argv);
 
+function enterContainer(type, command, options) {
+  execContainerCommand(type, "bash", options);
+}
 
-function executeCommand(type, command) {
+function execContainerCommand(type, command, options) {
   getContainerNameByType(type, function(container) {
-    console.log(container)
-    shell("docker exec -it " + container + " " + command)
+
+    var final_command = "docker exec -it ";
+
+    if (options) {
+      if (options.user)
+        final_command += "-u " + options.user + " "
+
+      //if (options.workdir)
+      //  final_command += command + " -c \”cd " + options.workdir + "; \" "
+    }
+
+    final_command += " " + container + " " + command
+    final_command = final_command.replace(/(\r\n|\n|\r)/gm,"");
+
+    console.log(final_command)
+
+    shell(final_command)
   })
 }
 
@@ -222,12 +247,13 @@ function shell(cmd) {
   process.stdin.pause();
   process.stdin.setRawMode(false);
 
-  var ch = require('child_process').spawn(command, args, {
+  var ch = spawn(command, args, {
     stdio: [0, 1, 2]
   });
 
-  ch.on('exit', function(test) {
-      process.stdin.setRawMode(true);
+  ch.on('exit', function() {
+    //console.log("Programm exited!")
+    process.stdin.setRawMode(true);
   });
 
   ch.on('err', function() {
@@ -235,8 +261,9 @@ function shell(cmd) {
   });
 }
 
-function check_reverse_proxy () {
+function check_reverse_proxy (env) {
   var running = syncExec('docker inspect --format="{{ .State.Running }}" jwilderproxy 2> /dev/null');
+  var port = (env == "local" ? 80 : 13337)
 
   if (running.stdout.indexOf("false") !=-1) {
     console.log("Reverse Proxy not started. Starting...".yellow)
@@ -249,7 +276,7 @@ function check_reverse_proxy () {
 
   else {
     console.log("Reverse Proxy not running. Starting...".red)
-    syncExec("docker run --name jwilderproxy -d -p 80:80 -v /var/run/docker.sock:/tmp/docker.sock:ro jwilder/nginx-proxy")
+    syncExec("docker run --name jwilderproxy -d -p " + port + ":80 -v /var/run/docker.sock:/tmp/docker.sock:ro jwilder/nginx-proxy")
   }
 }
 
@@ -313,19 +340,14 @@ function clone_branches (branches, settings) {
     for (var key in branches) {
         var branch = branches[key]
 
-        if (branch != "master") 
-          folder = branch;
-        else
-          folder = "www";
-
-        if(!fs.existsSync(__dirname + "/www/" + folder)) {
+        if(!fs.existsSync(__dirname + "/www/" + branch)) {
           console.log("Cloning into " + "www/" + branch)
           var exec = syncExec("git clone -b " + branch + " " + settings.web.environment.SITE_REPO + " " +
-                            __dirname + "/www/" + folder)
-          console.log(exec)
+                            __dirname + "/www/" + branch)
+          console.log(exec.stdout)
         } 
         else {
-          console.log(__dirname + "/www/" + folder + " already exists!")
+          console.log(__dirname + "/www/" + branch + " already exists!")
         }
     }
 }
@@ -336,28 +358,21 @@ function setup_branches (branches, settings) {
     for (var key in branches) {
         var branch = branches[key]
 
-        if (branch != "master") 
-          folder = branch;
-        else
-          folder = "www";
+        if(fs.existsSync(__dirname + "/www/" + branch)) {
 
-        if(fs.existsSync(__dirname + "/www/" + folder)) {
-          cd(__dirname + "/www/" + branch)
+          var options = { 
+            workdir: "/data/www/" + branch,
+            user: "www"
+          }
 
-          console.log("bower install")
-          syncExec("bower install");
+          execContainerCommand( "web", "/templates/" + config.profile + "/setup.js " + options.workdir + " " + branch + " " + env, options)
 
-          console.log("npm install")
-          syncExec("npm install");
-          
-          console.log("Using gulp magic to create css and js for live")
-          syncExec("gulp dist");
 
           // Mit Yeoman ausführen! Babam
-          cd(__dirname + "/www/" + branch + "/www")
+          //cd(__dirname + "/www/" + branch + "/www")
 
-          console.log("Set proper wordpress settings")
-          syncExec( __dirname + "/tools/wp_config.sh")
+          //console.log("Set proper wordpress settings")
+          //syncExec( __dirname + "/tools/wp_config.sh")
 
         }
         else {

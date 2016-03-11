@@ -13,7 +13,7 @@ server {
     set $branch "master";
   }
 
-  root        /data/www/$branch;
+  root        /data/www/$branch/www;
 
 
   #include     /etc/nginx/conf.d/default-*.conf;

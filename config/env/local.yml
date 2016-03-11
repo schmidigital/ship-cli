@@ -2,3 +2,4 @@ web:
   environment:
     URL: 'ship.docker'
     DEFAULT_BRANCH: 'dev'
+    ENVIRONMENT: 'local'
