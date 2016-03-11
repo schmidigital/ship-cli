@@ -85,9 +85,7 @@ program
   .action(function(container, cmd){
 
     if (container) {
-      getContainerNameByType(container, function(container_id) {
-        shell(dockercompose + " logs " + container_id)
-      })
+      shell(dockercompose + " logs " + container)
     }
     else {
       shell(dockercompose + " logs")

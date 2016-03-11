@@ -33,6 +33,10 @@ server {
     try_files $uri $uri/ /index.php?$args;
   }
 
+  location /deploy {
+    alias /data/www/deploy;
+  }
+
   # serve static files directly
   location ~* \.(jpg|jpeg|gif|css|png|js|ico|html)$ {
     access_log off;

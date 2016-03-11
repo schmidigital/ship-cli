@@ -22,7 +22,7 @@ catch (err) {
   console.log('chdir: ' + err);
 }
 
-function shell(cmd, sync) {  
+function shell(cmd, sync) {
 
   var full_command = spawnargs(cmd);
 
