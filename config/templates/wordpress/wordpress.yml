@@ -25,7 +25,7 @@ web:
     USER: www
     FOLDER: "/data/www"
     ENTRYPOINT: /config/bootstrap.sh
-
+  command: "/toolbox/permissions"
 db:
   image: mysql
   environment:
