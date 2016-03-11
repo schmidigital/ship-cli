@@ -226,13 +226,7 @@ function set_environment(env) {
 
   var outputFilename = '.ship.json';
 
-  fs.writeFile(outputFilename, JSON.stringify(config, null, 4), function(err) {
-      if(err) {
-        console.log(err);
-      } else {
-        console.log("JSON Config saved to ".green + outputFilename);
-      }
-  }); 
+  fs.writeFileSync(outputFilename, JSON.stringify(config, null, 4)); 
 }
 
 function shell(cmd) {  
