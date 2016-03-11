@@ -1,0 +1,16 @@
+#!/usr/bin/env node
+
+var spawnSync = require('child_process').spawnSync;
+
+console.log("Install dependencies...")
+npminstall = spawnSync("npm", ["install"], {
+  stdio: [0, 1, 2]
+});
+
+console.log("Fix permissions...")
+
+npminstall = spawnSync("node", ["permissions"], {
+  stdio: [0, 1, 2]
+});
+
+console.log("Finished...")
