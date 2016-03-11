@@ -3,7 +3,7 @@ web:
   volumes:
     - "./config/nginx.conf:/data/conf/nginx/hosts.d/nginx.conf"
     - "./config/templates:/templates"
-    - "./tools:/tools"
+    - "./action.sh:/action.sh"
     - "./www:/data/www"
   links:
     - db
@@ -25,7 +25,7 @@ web:
     USER: www
     FOLDER: "/data/www"
     ENTRYPOINT: /config/bootstrap.sh
-  command: /tools/action.sh
+  command: /action.sh
 
 
 db:
