@@ -1,0 +1,41 @@
+#!/usr/bin/env node
+var fs = require('fs'),
+	syncExec = require('sync-exec'),
+	userid = require('userid');
+
+fs.stat("/data/www", function(err, stats) {
+
+	var user, group;
+	var target_user = target_group = process.env.USER;
+
+	try {
+		user = userid.username(stats.uid);
+	} catch (e) {
+		console.log("No User with id", stats.uid)
+	} finally {
+		console.log("Found user", user)
+	}
+
+	try {
+		group = userid.groupname(stats.gid);
+	} catch (e) {
+		console.log("No group with id", stats.gid)
+	} finally {
+		console.log("Found group", group)
+	}
+
+	if (group != target_group) {
+		if (group != undefined && group != "undefined")
+			console.log(syncExec("groupmod -g 1333337 " + group).stdout)
+
+		console.log(syncExec("groupmod -g " + stats.gid + " " + target_group).stdout); 
+	}
+
+	if (user != target_user) {
+		if (user != undefined && user != "undefined")
+			console.log(syncExec("usermod -u 1333338 " + user).stdout)
+
+		console.log(syncExec("usermod -u " + stats.uid + " " + target_user).stdout); 
+	}
+
+});

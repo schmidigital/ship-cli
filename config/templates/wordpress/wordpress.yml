@@ -3,7 +3,7 @@ web:
   volumes:
     - "./config/nginx.conf:/data/conf/nginx/hosts.d/nginx.conf"
     - "./config/templates:/templates"
-    - "./action.sh:/action.sh"
+    - "./toolbox:/toolbox"
     - "./www:/data/www"
   links:
     - db
@@ -25,8 +25,6 @@ web:
     USER: www
     FOLDER: "/data/www"
     ENTRYPOINT: /config/bootstrap.sh
-  command: /action.sh
-
 
 db:
   image: mysql
