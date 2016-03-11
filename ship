@@ -78,6 +78,22 @@ program
   });
 
 
+program
+  .command('logs [container]')
+  .alias('l')
+  .description('output the logs of all container or of the given container')
+  .action(function(container, cmd){
+
+    shell(dockercompose + " logs")
+    
+  }).on('--help', function() {
+    console.log('  Examples:');
+    console.log();
+    console.log('    $ ship exec "docker-compose up"');
+    console.log();
+  });
+
+
 
 program
   .command('start <env>')
