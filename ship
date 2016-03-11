@@ -84,8 +84,15 @@ program
   .description('output the logs of all container or of the given container')
   .action(function(container, cmd){
 
-    shell(dockercompose + " logs")
-    
+    if (container) {
+      getContainerNameByType(container, function(container_id) {
+        shell(dockercompose + " logs " + container_id)
+      })
+    }
+    else {
+      shell(dockercompose + " logs")
+    }
+
   }).on('--help', function() {
     console.log('  Examples:');
     console.log();
