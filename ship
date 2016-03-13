@@ -307,16 +307,17 @@ function generate_compose (env) {
 
     var compose = _.merge(template, settings, env)
 
-    compose.web.environment.VIRTUAL_HOST = "*." + env.web.environment.URL + "," + env.web.environment.URL;
+    // Taking package.json to find out which user/group the project belongs to
+    var stats = fs.statSync( __dirname + "/package.json")
+
+    compose.web.environment.HOST_UID = stats.uid;
+    compose.web.environment.HOST_GID = stats.gid;
+
 
     // Generate YAML 
-    env_yml = YAML.stringify(compose, 4);
+    docker_compose = YAML.stringify(compose, 4);
 
-    fs.writeFile(__dirname + "/docker-compose.yml", env_yml, function(err) {
-        if(err) throw err; 
-
-        console.log("Yaml file was saved!");
-    }); 
+    var result = fs.writeFileSync(__dirname + "/docker-compose.yml", docker_compose); 
 
     return compose;
 }

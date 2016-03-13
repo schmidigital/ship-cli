@@ -3,39 +3,45 @@ var fs = require('fs'),
 	syncExec = require('sync-exec'),
 	userid = require('userid');
 
-fs.stat("/data/www", function(err, stats) {
-
 	var user, group;
-	var target_user = target_group = process.env.USER;
+	var host_uid = process.env.HOST_UID
+	var host_gid = process.env.HOST_GID
+	var target_user =  process.env.DOCKER_USERNAME
+	var target_group = process.env.DOCKER_GROUPNAME
 
+	console.log("Looking if user already exists for UID", host_uid)
+
+
+	// Check if our host uid and gid are already assigned to another group
 	try {
-		user = userid.username(stats.uid);
+		user = userid.username(host_uid);
 	} catch (e) {
-		console.log("No User with id", stats.uid)
+		console.log("No User with id", host_uid)
 	} finally {
 		console.log("Found user", user)
 	}
 
 	try {
-		group = userid.groupname(stats.gid);
+		group = userid.groupname(host_gid);
 	} catch (e) {
-		console.log("No group with id", stats.gid)
+		console.log("No group with id", host_gid)
 	} finally {
 		console.log("Found group", group)
 	}
+
+
 
 	if (group != target_group) {
 		if (group != undefined && group != "undefined")
 			console.log(syncExec("groupmod -g 1333337 " + group).stdout)
 
-		console.log(syncExec("groupmod -g " + stats.gid + " " + target_group).stdout); 
+		console.log(syncExec("groupmod -g " + host_gid + " " + target_group).stdout); 
 	}
 
 	if (user != target_user) {
 		if (user != undefined && user != "undefined")
 			console.log(syncExec("usermod -u 1333338 " + user).stdout)
 
-		console.log(syncExec("usermod -u " + stats.uid + " " + target_user).stdout); 
+		console.log(syncExec("usermod -u " + host_uid + " " + target_user).stdout); 
 	}
 
-});

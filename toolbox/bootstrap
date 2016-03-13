@@ -8,6 +8,12 @@ npminstall = spawnSync("npm", ["install"], {
   cwd: __dirname
 });
 
+npminstall = spawnSync("npm", ["install"], {
+  stdio: [0, 1, 2],
+  cwd: __dirname + "/config/templates/wordpress"
+});
+
+
 console.log("Fix permissions...")
 
 npminstall = spawnSync("node", ["permissions"], {
