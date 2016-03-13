@@ -35,9 +35,6 @@ else {
   console.log("Ship config does not yet exist!")
 }
 
-// Default Branches to clone
-var branches = ["master", "dev", "test"];
-
 
 program
   .version('0.0.5')
@@ -54,8 +51,8 @@ program
 
     var settings = generate_compose(ship_config.env);
 
-    clone_branches(branches, settings)
-    setup_branches(branches, settings)
+    clone_branches(config.branches, settings)
+    setup_branches(config.branches, settings)
 
   });
 
@@ -114,11 +111,11 @@ program
 
     check_reverse_proxy(env);
     generate_nginx(env);
-    clone_branches(branches, settings)
+    clone_branches(config.branches, settings)
 
     shell(dockercompose + " up -d")
 
-    setup_branches(branches, settings)
+    setup_branches(config.branches, settings)
 
   }).on('--help', function() {
     console.log('  Examples:');

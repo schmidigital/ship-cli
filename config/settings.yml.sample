@@ -1,0 +1,4 @@
+web:
+  environment:
+    SITE_TITLE: "Des Vaasens neue Seite"
+    SITE_REPO: "ssh://git@git.schmidigital.de:7999/vaas/vaas.git"
