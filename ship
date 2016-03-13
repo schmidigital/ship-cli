@@ -313,7 +313,7 @@ function generate_compose (env) {
     compose.web.environment.HOST_UID = stats.uid;
     compose.web.environment.HOST_GID = stats.gid;
 
-    compose.web.environment.VIRTUAL_HOST = "*." + env.web.environment.URL + " " + env.web.environment.URL;;
+    compose.web.environment.VIRTUAL_HOST = "*." + env.web.environment.URL + ", " + env.web.environment.URL;;
 
     // Generate YAML 
     docker_compose = YAML.stringify(compose, 4);
