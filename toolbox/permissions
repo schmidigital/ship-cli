@@ -15,6 +15,10 @@ var fs = require('fs'),
 	// Check if our host uid and gid are already assigned to another group
 	try {
 		user = userid.username(host_uid);
+
+		if (user == undefined || user === "undefined" )
+			user = userid.groupname(host_gid);
+
 	} catch (e) {
 		console.log("No User with id", host_uid)
 	} finally {
@@ -23,6 +27,10 @@ var fs = require('fs'),
 
 	try {
 		group = userid.groupname(host_gid);
+
+		if (group == undefined || group === "undefined" )
+			group = userid.groupname(host_uid);
+
 	} catch (e) {
 		console.log("No group with id", host_gid)
 	} finally {
