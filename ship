@@ -35,6 +35,9 @@ else {
   console.log("Ship config does not yet exist!")
 }
 
+// Set remote Origin
+syncExec("git remote set-url origin " + config.repo);
+syncExec("git remote add upstream " + require( __dirname + "/package.json").repository);
 
 program
   .version('0.0.5')
