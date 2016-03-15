@@ -36,7 +36,11 @@ web:
 
     SITE_REPO: "ssh://git@git.schmidigital.de:7999/some/repo.git"
 
-    USER: www
+    HOST_UID: "UID"
+    HOST_GID: "GID"
+    DOCKER_USERNAME: "www"
+    DOCKER_GROUPNAME: "www"
+
     FOLDER: "/data/www"
     ENTRYPOINT: /config/bootstrap.sh
   command: "/toolbox/bootstrap"
