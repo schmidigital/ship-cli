@@ -1,3 +1,16 @@
+mail:
+  image: tvial/docker-mailserver
+  hostname: test
+  domainname: schmidigital.de
+  # your FQDN will be 'mail.domain.com'
+  #ports:
+  #- "25:25"
+  #- "143:143"
+  #- "587:587"
+  #- "993:993"
+  volumes:
+  #- ./spamassassin:/tmp/spamassassin/
+  - ./postfix:/tmp/postfix/
 web:
   image: schmidigital/docker-nginx-php-wordpress
   volumes:
@@ -7,6 +20,7 @@ web:
     - "./www:/data/www"
   links:
     - db
+    - mail
   environment: 
     NGINX_GENERATE_DEFAULT_VHOST: "false"
 
@@ -35,3 +49,4 @@ db:
     MYSQL_PASSWORD: "wordpress"
   volumes:
     - "./mysql:/var/lib/mysql"
+

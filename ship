@@ -308,6 +308,8 @@ function generate_compose (env) {
     var compose = _.merge(template, settings, env)
 
     compose.web.environment.VIRTUAL_HOST = "*." + env.web.environment.URL + "," + env.web.environment.URL;
+    compose.web.environment.LETSENCRYPT_HOST = "www." + env.web.environment.URL + "," + env.web.environment.URL;
+    compose.web.environment.LETSENCRYPT_EMAIL = "info@" + env.web.environment.URL;
 
     // Generate YAML 
     env_yml = YAML.stringify(compose, 4);
