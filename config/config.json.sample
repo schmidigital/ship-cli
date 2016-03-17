@@ -1,4 +1,5 @@
 {
 	"profile": "wordpress",
+	"repo": "ssh://git@git.schmidigital.de:7999/sds/secrets-ship.git",
 	"branches": ["master"]
 }
