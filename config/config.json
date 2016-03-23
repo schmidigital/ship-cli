@@ -1,3 +1,4 @@
 {
-	"profile": "wordpress"
+	"profile": "wordpress",
+	"branches": ["master", "dev"]
 }
