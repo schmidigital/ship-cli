@@ -35,6 +35,9 @@ else {
   console.log("Ship config does not yet exist!")
 }
 
+// Set remote Origin
+syncExec("git remote set-url origin " + config.repo);
+syncExec("git remote add upstream " + require( __dirname + "/package.json").repository);
 
 program
   .version('0.0.5')
@@ -306,6 +309,10 @@ function generate_compose (env) {
 
 
     var compose = _.merge(template, settings, env)
+
+    compose.web.environment.VIRTUAL_HOST = "*." + env.web.environment.URL + "," + env.web.environment.URL;
+    compose.web.environment.LETSENCRYPT_HOST = "www." + env.web.environment.URL + "," + env.web.environment.URL;
+    compose.web.environment.LETSENCRYPT_EMAIL = "info@" + env.web.environment.URL;
 
     // Taking package.json to find out which user/group the project belongs to
     var stats = fs.statSync( __dirname + "/package.json")
