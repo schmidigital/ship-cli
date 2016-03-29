@@ -13,10 +13,17 @@
     "sync-exec": "^0.6.2",
     "yamljs": "^0.2.6"
   },
+  "bin": {
+    "ship": "./bin/ship.js"
+  },
+  "directories": {
+    "lib": "lib"
+  },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "preferGlobal": "true",
   "author": "Michael Smith",
   "license": "ISC"
 }

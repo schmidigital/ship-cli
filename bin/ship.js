@@ -24,7 +24,7 @@ var dockercompose = syncExec('which docker-compose').stdout.replace(/(\r\n|\n|\r
     docker = syncExec('which dockers').stdout.replace(/(\r\n|\n|\r)/gm,"")
 
 
-var config = require( __dirname + "/config/config.json")
+/*var config = require( __dirname + "/config/config.json")
 var ship_config;
 
 if(fs.existsSync(__dirname + "/.ship.json")) {
@@ -38,6 +38,7 @@ else {
 // Set remote Origin
 syncExec("git remote set-url origin " + config.repo);
 syncExec("git remote add upstream " + require( __dirname + "/package.json").repository);
+*/
 
 program
   .version('0.0.5')
@@ -151,8 +152,8 @@ program
   .alias('e')
   .description('enter a specific container.')
   .action(function(container){
-
-    execContainerCommand("web", "bash")
+    console.log("Enter", container)
+    execContainerCommand(container, "bash")
 
   }).on('--help', function() {
     console.log('  Examples:');
