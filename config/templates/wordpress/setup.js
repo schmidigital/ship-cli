@@ -37,7 +37,7 @@ function shell(cmd, sync) {
   var spawn = spawnAsync;
   var ch;
 
-  if ("sync == true") {
+  if (sync) {
     ch = spawnSync(command, args, {
       stdio: [0, 1, 2]
     });
