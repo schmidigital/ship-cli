@@ -8,12 +8,12 @@ var program = require('commander');
     syncExec = require('sync-exec'),
     colors = require('colors'),
     util  = require('util'),
-    spawn = require('child_process').spawn,
-    spawnargs = require('spawn-args'),
-    YAML = require('yamljs'),
     fs = require('fs'),
     _ = require('lodash'),
     require('shelljs/global')
+
+
+var appPath = process.cwd();
 
 /**
  * Local Commands
@@ -41,25 +41,10 @@ syncExec("git remote add upstream " + require( __dirname + "/package.json").repo
 */
 
 program
-  .version('0.0.5')
+  .version('0.0.6')
   .option('-C, --chdir <path>', 'change the working directory')
   .option('-c, --config <path>', 'set config path. defaults to ./deploy.conf')
   .option('-T, --no-tests', 'ignore test hook')
-
-
-
-program
-  .command('setup')
-  .description('run setup commands for the site(s)')
-  .action(function(){
-
-    var settings = generate_compose(ship_config.env);
-
-    clone_branches(config.branches, settings)
-    setup_branches(config.branches, settings)
-
-  });
-
 
 
 program
@@ -102,26 +87,13 @@ program
 
 
 program
-  .command('start <env>')
+  .command('start')
   .alias('s')
   .description('starts the docker compose in the given environment')
   .option("-b --branch <branch>", "Which branch to use. (e.g. /feature/vs-13-slider")
   .option("-m --migrate <migrate>", "Wheter to migrate database or not.")
-  .action(function(env, options){
-
-    set_environment(env);
-
-    var settings = generate_compose(env);
-
-    check_reverse_proxy(env);
-    generate_nginx(env);
-    clone_branches(config.branches, settings)
-
-    shell(dockercompose + " up -d")
-
-    setup_branches(config.branches, settings)
-
-  }).on('--help', function() {
+  .action(require('./ship-start'))
+  .on('--help', function() {
     console.log('  Examples:');
     console.log();
     console.log('    $ ship start -e local');
@@ -152,7 +124,9 @@ program
   .alias('e')
   .description('enter a specific container.')
   .action(function(container){
+
     console.log("Enter", container)
+    
     execContainerCommand(container, "bash")
 
   }).on('--help', function() {
@@ -190,220 +164,7 @@ program
 
 program.parse(process.argv);
 
-function enterContainer(type, command, options) {
-  execContainerCommand(type, "bash", options);
-}
 
-function execContainerCommand(type, command, options) {
-  getContainerNameByType(type, function(container) {
 
-    var final_command = "docker exec -it ";
 
-    if (options) {
-      if (options.user)
-        final_command += "-u " + options.user + " "
 
-      //if (options.workdir)
-      //  final_command += command + " -c \”cd " + options.workdir + "; \" "
-    }
-
-    final_command += " " + container + " " + command
-    final_command = final_command.replace(/(\r\n|\n|\r)/gm,"");
-
-    console.log(final_command)
-
-    shell(final_command)
-  })
-}
-
-function getContainerNameByType(type, cb) {
-
-  var docker_compose = spawn("docker-compose", ["ps", "-q"])
-  var xargs = spawn("xargs", ["docker", "inspect", "--format", "'{{.Name}}'"])
-  var grep = spawn("grep", [ type ])
-  var sed = spawn("sed", ["s:/::"])
-
-  docker_compose.stdout.pipe(xargs.stdin);
-  xargs.stdout.pipe(grep.stdin);
-  grep.stdout.pipe(sed.stdin);
-
-  sed.stdout.on('data', function(data){
-      var container = data.toString();
-      container = container.replace(/'/g,"");
-      if(container) {
-          cb(container);
-      }
-      else {
-        throw "Container not found!"
-      }
-  });
-
-}
-
-function set_environment(env) {
-
-  var config = {
-    env: env,
-  }
-
-  var outputFilename = '.ship.json';
-
-  fs.writeFileSync(outputFilename, JSON.stringify(config, null, 4)); 
-}
-
-function shell(cmd) {  
-
-  var full_command = spawnargs(cmd);
-
-  var command = full_command[0];
-  var args = full_command;
-  args.shift();
-
-
-  process.stdin.pause();
-  process.stdin.setRawMode(false);
-
-  var ch = spawn(command, args, {
-    stdio: [0, 1, 2]
-  });
-
-  ch.on('exit', function() {
-    //console.log("Programm exited!")
-    process.stdin.setRawMode(true);
-  });
-
-  ch.on('err', function() {
-    console.log("Error!".red)
-  });
-}
-
-function check_reverse_proxy (env) {
-  var running = syncExec('docker inspect --format="{{ .State.Running }}" jwilderproxy 2> /dev/null');
-  var port = (env == "local" ? 80 : 13337)
-
-  if (running.stdout.indexOf("false") !=-1) {
-    console.log("Reverse Proxy not started. Starting...".yellow)
-    syncExec("docker start jwilderproxy")
-  }
-
-  else if (running.stdout.indexOf("true") !=-1) {
-    console.log("Reverse Proxy already running. Nice!".green)
-  }
-
-  else {
-    console.log("Reverse Proxy not running. Starting...".red)
-    syncExec("docker run --name jwilderproxy -d -p " + port + ":80 -v /var/run/docker.sock:/tmp/docker.sock:ro jwilder/nginx-proxy")
-  }
-}
-
-
-function generate_compose (env) {
-
-    // 1. Load Settings
-    var settings = YAML.load( __dirname + '/config/settings.yml');
-
-    // 2. Load Template
-    var template = YAML.load( __dirname + '/config/templates/' + config.profile + '/' + config.profile + '.yml');
-
-    // 3. Load Environment
-    var env = YAML.load( __dirname + '/config/env/' + env + '.yml');
-
-
-    var compose = _.merge(template, settings, env)
-
-    compose.web.environment.VIRTUAL_HOST = "*." + env.web.environment.URL + "," + env.web.environment.URL;
-    compose.web.environment.LETSENCRYPT_HOST = "www." + env.web.environment.URL + "," + env.web.environment.URL;
-    compose.web.environment.LETSENCRYPT_EMAIL = "info@" + env.web.environment.URL;
-
-    // Taking package.json to find out which user/group the project belongs to
-    var stats = fs.statSync( __dirname + "/package.json")
-
-    compose.web.environment.HOST_UID = stats.uid;
-    compose.web.environment.HOST_GID = stats.gid;
-
-    compose.web.environment.VIRTUAL_HOST = "*." + env.web.environment.URL + ", " + env.web.environment.URL;;
-
-    // Generate YAML 
-    docker_compose = YAML.stringify(compose, 4);
-
-    var result = fs.writeFileSync(__dirname + "/docker-compose.yml", docker_compose); 
-
-    return compose;
-}
-
-function generate_nginx (env) {
-
-    var env = env || ship_config.env;
-    var env_config = YAML.load( __dirname + '/config/env/' + env + '.yml');
-    
-    console.log("Generate Nginx File using " + env + " environment.")
-
-
-    fs.readFile( __dirname + '/config/nginx.conf.template', 'utf-8', function (err, data) {
-        if (err) throw err; 
-
-        var result = data.replace(/DOMAIN/g, env_config.web.environment.URL);
-
-        fs.writeFile( __dirname + '/config/nginx.conf'
-          , result, 'utf8', function (err) {
-           if (err) throw err;
-
-           console.log("Successfully created nginx.conf".green)
-        });
-
-    });
-}
-
-// TODO: Was machen wir, wenns die Branches noch nicht gibt? Anlegen?
-//       Fehlermeldung ausgeben und fragen, ob man erstellen soll?
-function clone_branches (branches, settings) {
-    console.log("# Clone Branches".blue)
-
-    for (var key in branches) {
-        var branch = branches[key]
-
-        if(!fs.existsSync(__dirname + "/www/" + branch)) {
-          console.log("Cloning into " + "www/" + branch)
-          var exec = syncExec("git clone -b " + branch + " " + settings.web.environment.SITE_REPO + " " +
-                            __dirname + "/www/" + branch)
-          console.log(exec.stdout)
-        } 
-        else {
-          console.log(__dirname + "/www/" + branch + " already exists!")
-        }
-    }
-}
-
-function setup_branches (branches, settings) {
-    console.log("# Setup Branches".blue)
-
-    for (var key in branches) {
-        var branch = branches[key]
-
-        if(fs.existsSync(__dirname + "/www/" + branch)) {
-
-          var options = { 
-            workdir: "/data/www/" + branch,
-            user: "www"
-          }
-
-          execContainerCommand( "web", "/templates/" + config.profile + "/setup.js " + options.workdir + " " + branch + " " + env, options)
-
-
-          // Mit Yeoman ausführen! Babam
-          //cd(__dirname + "/www/" + branch + "/www")
-
-          //console.log("Set proper wordpress settings")
-          //syncExec( __dirname + "/tools/wp_config.sh")
-
-        }
-        else {
-          console.log("Error: ".red + "Folder " + __dirname + "/www/" + branch + " does not exist")
-        }
-        
-    }
-}
-
-function db_import() {
-
-}
