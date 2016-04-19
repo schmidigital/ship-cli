@@ -10,9 +10,11 @@
     "colors": "^1.1.2",
     "commander": "^2.9.0",
     "lodash": "^4.7.0",
+    "sails-build-dictionary": "^0.10.1",
     "shelljs": "^0.6.0",
     "spawn-args": "^0.1.0",
     "sync-exec": "^0.6.2",
+    "walk": "^2.3.9",
     "yamljs": "^0.2.6"
   },
   "bin": {

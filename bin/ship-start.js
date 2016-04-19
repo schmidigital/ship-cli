@@ -10,7 +10,7 @@ module.exports = function () {
 	var scope = _.merge({
 		rootPath: process.cwd(),
 		//shipRoot: nodepath.resolve(__dirname, '..'),
-		sailsPackageJSON: package
+		shipPackageJSON: package
 	}, rconf);
 	
 
@@ -24,10 +24,10 @@ module.exports = function () {
 	globalShip.start(scope, afterwards);
 
 
-	function afterwards (err, sails) {
+	function afterwards (err, ship) {
 		if (err) {
 		var message = err.stack ? err.stack : err;
-		sails ? console.log(message) : console.log(message); process.exit(1);
+		ship ? console.log(message) : console.log(message); process.exit(1);
 		}
 		// try {console.timeEnd('cli_lift');}catch(e){}
 	}
