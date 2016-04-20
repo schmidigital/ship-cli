@@ -5,17 +5,21 @@
   "main": "ship",
   "repository": "ssh://git@git.schmidigital.de:7999/schmid/ship.git",
   "dependencies": {
-    "async": "^2.0.0-rc.2",
+    "async": "^2.0.0-rc.3",
     "captains-log": "^0.11.11",
     "colors": "^1.1.2",
     "commander": "^2.9.0",
     "lodash": "^4.7.0",
+    "merge-defaults": "^0.2.1",
+    "rc": "^1.1.6",
     "sails-build-dictionary": "^0.10.1",
     "shelljs": "^0.6.0",
     "spawn-args": "^0.1.0",
     "sync-exec": "^0.6.2",
     "walk": "^2.3.9",
-    "yamljs": "^0.2.6"
+    "yamljs": "^0.2.6",
+    "sails-build-dictionary": "*",
+    "walk": "*" 
   },
   "bin": {
     "ship": "./bin/ship.js"

@@ -10,7 +10,8 @@ var program = require('commander');
     util  = require('util'),
     fs = require('fs'),
     _ = require('lodash'),
-    require('shelljs/global')
+    require('shelljs/global'),
+    NOOP = function() {};
 
 
 var appPath = process.cwd();
@@ -89,7 +90,7 @@ program
 program
   .command('start')
   .alias('s')
-  .description('starts the docker compose in the given environment')
+  .description('starts the given template in the given environment')
   .option("-b --branch <branch>", "Which branch to use. (e.g. /feature/vs-13-slider")
   .option("-m --migrate <migrate>", "Wheter to migrate database or not.")
   .action(require('./ship-start'))
@@ -103,14 +104,11 @@ program
 
 
 program
-  .command('destroy [container]')
+  .command('down [container]')
   .alias('d')
-  .description('destroys all containers or a specific one given in container argument.')
-  .action(function(container){
-
-    shell(dockercompose + " down")
-
-  }).on('--help', function() {
+  .description('stops & removes all containers or a specific one given in container argument.')
+  .action(require('./ship-down'))
+  .on('--help', function() {
     console.log('  Examples:');
     console.log();
     console.log('    $ ship destroy');
@@ -146,7 +144,7 @@ program
 
 program
   .command('nginx <command>')
-  .description('initialize a project using a profile, e.g. wordpress, magento, nodejs, html, php')
+  .description('Refresh the nginx config')
   .action(function(command){
     switch (command) {
       case "setup": {
@@ -162,9 +160,16 @@ program
     console.log();
   });
 
-program.parse(process.argv);
+program
+  .command('*')
+  .action(function() {
+    program.outputHelp();
+  })
 
 
+program.parse(process.argv)
 
 
-
+if (!process.argv.slice(2).length) {
+    program.help();
+}
