@@ -7,17 +7,20 @@ odoo:
     - ./data/addons:/mnt/extra-addons
     - ./data/config/openerp-server.conf:/etc/odoo/openerp-server.conf
     - ./data/tools:/tools
-  command: /tools/permission_fix
+  command: /tools/entrypoint_odoo
   environment:
     VIRTUAL_PORT: 8069
+    COMMAND: "su -s /bin/bash -c 'openerp-server' odoo"
   user: root:root
 db:
   image: postgres
   environment:
     POSTGRES_USER: "odoo"
     POSTGRES_PASSWORD: "odoo"
+    COMMAND: "/docker-entrypoint.sh postgres"
+  entrypoint: /tools/entrypoint_db
   volumes:
-    - ./dump:/dump
-    - ./data/scripts:/scripts
+    - ./data/dump:/dump
+    - ./data/tools:/tools
     - ./data/psql:/var/lib/postgresql/data
   user: root:root 

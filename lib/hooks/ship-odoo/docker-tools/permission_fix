@@ -4,6 +4,7 @@ set -e
 UNUSED_USER_ID=21338
 UNUSED_GROUP_ID=21337
 
+echo "Fixing permissions."
 
 # Setting Group Permissions
 DOCKER_GROUP_CURRENT_ID=`id -g $DOCKER_GROUP`
@@ -53,13 +54,3 @@ else
   echo "Finished"
 fi
 
-
-chown -Rf odoo:odoo /var/lib/odoo /mnt/extra-addons
-
-echo '* Starting Command'
-echo $COMMAND
-
-$COMMAND
-
-#debug
-#tail -f /dev/null
