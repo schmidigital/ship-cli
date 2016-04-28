@@ -3,13 +3,14 @@ odoo:
   links:
     - db  
   volumes:
-    - ./data/odoo:/var/lib/odoo
-    - ./data/addons:/mnt/extra-addons
-    - ./data/config/openerp-server.conf:/etc/odoo/openerp-server.conf
+  #  - ./data/odoo:/var/lib/odoo
+  #  - ./data/addons:/mnt/extra-addons
+  #  - ./data/config/openerp-server.conf:/etc/odoo/openerp-server.conf
     - ./data/tools:/tools
-  entrypoint: /tools/permission_fix
+  command: /tools/permission_fix
   environment:
     VIRTUAL_PORT: 8069
+  user: root:root
 db:
   image: postgres
   environment:
@@ -19,4 +20,4 @@ db:
     - ./dump:/dump
     - ./data/scripts:/scripts
     - ./data/psql:/var/lib/postgresql/data
-  user: root:root
+  user: root:root 

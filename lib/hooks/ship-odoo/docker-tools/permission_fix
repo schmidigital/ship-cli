@@ -57,9 +57,10 @@ else
 fi
 
 
+echo '* Starting Command'
+echo $COMMAND
 
-#echo
-#echo '* Starting Entrypoint'
-#echo $ENTRYPOINT
+$COMMAND
 
-#$ENTRYPOINT
+#tail -f /dev/null
+

@@ -13,7 +13,6 @@ var program = require('commander');
     require('shelljs/global'),
     NOOP = function() {};
 
-
 var appPath = process.cwd();
 
 /**
