@@ -1,0 +1,23 @@
+#!/usr/bin/env bash  
+hostname=`hostname`
+
+##########################################
+## OpenERP Backup
+## Backup databases: openerpdb1, openerpdb2
+##########################################
+
+# Create dump folder, if not exists
+mkdir -p dump/history
+mv dump/*.sql.tar dump/history
+# Move old dumps to history folder
+
+
+# Dump DBs
+for db in odoo secrets
+do
+  date=`date +"%Y%m%d_%H%M%N"`
+  filename="/dump/${hostname}_${db}_${date}.sql.tar"
+  pg_dump -U odoo -F t -b -f $filename $db
+done
+
+exit 0

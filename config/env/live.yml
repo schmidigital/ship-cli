@@ -1,6 +1,0 @@
-web:
-  environment:
-    URL: 'vaas-reinigungssysteme.de'
-    URL_ALIAS: 'vaas-reinigungssysteme.com'
-    DEFAULT_BRANCH: 'master'
-    ENVIRONMENT: 'production'

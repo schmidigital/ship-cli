@@ -26,8 +26,8 @@ module.exports = function () {
 
 	function afterwards (err, ship) {
 		if (err) {
-		var message = err.stack ? err.stack : err;
-		ship ? console.log(message) : console.log(message); process.exit(1);
+			var message = err.stack ? err.stack : err;
+			ship ? console.log(message) : console.log(message); process.exit(1);
 		}
 		// try {console.timeEnd('cli_lift');}catch(e){}
 	}

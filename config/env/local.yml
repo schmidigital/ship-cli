@@ -1,5 +1,0 @@
-web:
-  environment:
-    URL: 'vaas.docker'
-    DEFAULT_BRANCH: 'dev'
-    ENVIRONMENT: 'local'
