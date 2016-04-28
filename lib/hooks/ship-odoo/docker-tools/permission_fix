@@ -59,6 +59,7 @@ chown -Rf odoo:odoo /var/lib/odoo /mnt/extra-addons
 echo '* Starting Command'
 echo $COMMAND
 
-#$COMMAND
+$COMMAND
 
-tail -f /dev/null
+#debug
+#tail -f /dev/null
