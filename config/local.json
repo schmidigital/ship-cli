@@ -1,5 +1,0 @@
-{
-	"profile": "wordpress",
-	"branches": ["master", "dev"],
-	"environment": "local"
-}

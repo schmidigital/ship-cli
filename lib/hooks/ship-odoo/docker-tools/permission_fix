@@ -29,9 +29,6 @@ else
   echo "-- -- -- -- --"
 fi
 
-
-
-
 # Setting User Permissions
 DOCKER_USER_CURRENT_ID=`id -u $DOCKER_USER`
 
@@ -57,10 +54,11 @@ else
 fi
 
 
+chown -Rf odoo:odoo /var/lib/odoo /mnt/extra-addons
+
 echo '* Starting Command'
 echo $COMMAND
 
-$COMMAND
+#$COMMAND
 
-#tail -f /dev/null
-
+tail -f /dev/null

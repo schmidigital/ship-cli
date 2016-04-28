@@ -3,9 +3,9 @@ odoo:
   links:
     - db  
   volumes:
-  #  - ./data/odoo:/var/lib/odoo
-  #  - ./data/addons:/mnt/extra-addons
-  #  - ./data/config/openerp-server.conf:/etc/odoo/openerp-server.conf
+    - ./data/odoo:/var/lib/odoo
+    - ./data/addons:/mnt/extra-addons
+    - ./data/config/openerp-server.conf:/etc/odoo/openerp-server.conf
     - ./data/tools:/tools
   command: /tools/permission_fix
   environment:
