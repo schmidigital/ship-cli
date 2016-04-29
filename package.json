@@ -1,7 +1,7 @@
 {
   "name": "ship",
   "version": "1.0.0",
-  "description": "WP docker ship",
+  "description": "Ship Auto-Creates Environments for Wordpress, Magento, Odoo, ...",
   "main": "ship",
   "repository": "ssh://git@git.schmidigital.de:7999/schmid/ship.git",
   "dependencies": {
@@ -9,7 +9,6 @@
     "captains-log": "^0.11.11",
     "colors": "^1.1.2",
     "commander": "^2.9.0",
-    "fs-extra": "^0.29.0",
     "lodash": "^4.7.0",
     "merge-defaults": "^0.2.1",
     "rc": "^1.1.6",
@@ -18,8 +17,7 @@
     "ship-utils": "*",
     "spawn-args": "^0.1.0",
     "sync-exec": "^0.6.2",
-    "walk": "^2.3.9",
-    "yamljs": "^0.2.6"
+    "walk": "^2.3.9"
   },
   "bin": {
     "ship": "./bin/ship.js"
@@ -31,7 +29,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "preferGlobal": "true",
+  "preferGlobal": true,
   "author": "Michael Smith",
   "license": "ISC"
 }
