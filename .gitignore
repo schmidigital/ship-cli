@@ -5,3 +5,4 @@ data
 tools
 config/nginx.conf
 .ship.json
+.vscode
