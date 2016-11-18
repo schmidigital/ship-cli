@@ -1,9 +1,9 @@
 {
-  "name": "ship",
+  "name": "ship-cli",
   "version": "1.0.0",
   "description": "Ship Auto-Creates Environments for Wordpress, Magento, Odoo, ...",
   "main": "ship",
-  "repository": "ssh://git@git.schmidigital.de:7999/schmid/ship.git",
+  "repository": "git@github.com:schmidigital/ship-cli.git",
   "dependencies": {
     "async": "^2.0.0-rc.3",
     "captains-log": "^0.11.11",
