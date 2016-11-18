@@ -1,6 +1,6 @@
 {
   "name": "ship-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Ship Auto-Creates Environments for Wordpress, Magento, Odoo, ...",
   "main": "ship",
   "repository": "git@github.com:schmidigital/ship-cli.git",
@@ -31,5 +31,5 @@
   },
   "preferGlobal": true,
   "author": "Michael Smith",
-  "license": "ISC"
+  "license": "MIT"
 }
